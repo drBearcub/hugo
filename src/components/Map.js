@@ -72,6 +72,7 @@ function Map() {
   const [selectedMarker, setSelectedMarker] = useState(null);
   const [mapZoom, setMapZoom] = useState(16);
   const [mapRef, setMapRef] = useState(null);
+  const [response, setResponse] = useState(null);
 
   useEffect(() => {
     console.log({selectedLandmarks})
@@ -140,9 +141,6 @@ function Map() {
     );
   }, []);
 
-  const handleCloseBubble = (index) => {
-    setConversations(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleMarkerClick = async (landmark) => {
     setSelectedMarker(landmark);

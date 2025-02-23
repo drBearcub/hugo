@@ -226,14 +226,14 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
   const shouldUseOverlay = isRecording || isTranscribing || isSending || (selectedLandmarks.length === 0 && !isFirstRequest && !isExploreMode)
   const thinking = isTranscribing || isSending
-  const canDisplayResponse = response && !isSending && !isTranscribing && !isRecording
-
+  const canDisplayResponse = response && !isSending && !isTranscribing && !isRecording && shouldUseOverlay
+  const shouldDisplayAskMeAnything = !isExploreMode && !shouldUseOverlay
   console.log("response", response);
   console.log("isRecording", isRecording);
   return (
     <>
       {
-       !shouldUseOverlay && (
+        shouldDisplayAskMeAnything&& (
         <div style={thinkingBubbleStyle}>
           <img 
             src={guideAvatar}
