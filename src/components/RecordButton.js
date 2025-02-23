@@ -29,6 +29,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
   const [isSending, setIsSending] = React.useState(false);
   const [status, setStatus] = React.useState('');
   const [transcribedText, setTranscribedText] = React.useState('');
+  const [response, setResponse] = React.useState(null);
 
   const [waveStyles] = React.useState(() => 
     Array(8).fill(null).map((_, i) => ({
@@ -146,12 +147,12 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
         parsedLandmarks: landmarksWithImages
       };
 
-      console.log("landmark data", {data});
 
       // Call ElevenLabs API for text-to-speech
       const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
 
-      console.log(data.response.speech);
+      setResponse(apiResponse.speech);
+
       const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
         headers: {
@@ -225,9 +226,33 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
   const shouldUseOverlay = isRecording || isTranscribing || isSending || (selectedLandmarks.length === 0 && !isFirstRequest && !isExploreMode)
   const thinking = isTranscribing || isSending
-  
+  const canDisplayResponse = response && !isSending && !isTranscribing && !isRecording
+
+  console.log("response", response);
+  console.log("isRecording", isRecording);
   return (
     <>
+      {
+       !shouldUseOverlay && (
+        <div style={thinkingBubbleStyle}>
+          <img 
+            src={guideAvatar}
+            alt="Guide avatar"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'contain'
+            }}
+          />
+          <span style={{
+            fontSize: '16px',
+            color: '#333'
+          }}>
+            Ask me anything about {location}
+          </span>
+        </div>
+       ) 
+      }
       {thinking && (
         <div style={thinkingBubbleStyle}>
           <img 
@@ -244,6 +269,46 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
             color: '#333'
           }}>
             Guide is thinking...
+          </span>
+        </div>
+      )}
+
+      {isRecording && (
+        <div style={thinkingBubbleStyle}>
+          <img 
+            src={guideAvatar}
+            alt="Guide avatar"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'contain'
+            }}
+          />
+          <span style={{
+            fontSize: '16px',
+            color: '#333'
+          }}>
+            Guide is listening...
+          </span>
+        </div>
+      )}
+
+      {canDisplayResponse && (
+        <div style={thinkingBubbleStyle}>
+          <img 
+            src={guideAvatar}
+            alt="Guide avatar"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'contain'
+            }}
+          />
+          <span style={{
+            fontSize: '16px',
+            color: '#333'
+          }}>
+            {response}
           </span>
         </div>
       )}
@@ -265,24 +330,6 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
           {waveStyles.map((style, index) => (
             <div key={index} style={style} />
           ))}
-        </div>
-      )}
-
-      {(isTranscribing || isSending) && (
-        <div style={processingContainerStyle}>
-          <svg width="24" height="24" viewBox="0 0 24 24">
-            <circle
-              cx="12"
-              cy="12"
-              r="10"
-              stroke={isTranscribing ? "#2196F3" : "#FF69B4"}
-              strokeWidth="3"
-              fill="none"
-              style={{
-                animation: "spin 1s linear infinite",
-              }}
-            />
-          </svg>
         </div>
       )}
 
