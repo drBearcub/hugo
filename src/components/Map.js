@@ -1,4 +1,4 @@
-import { GoogleMap, LoadScript, DirectionsRenderer, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, DirectionsRenderer, Marker, InfoWindow, Circle } from '@react-google-maps/api';
 import React, { useState, useCallback, useEffect, use } from 'react';
 import RecordButton from './RecordButton';
 import TextBubble from './TextBubble';
@@ -64,12 +64,14 @@ const removeButtonStyle = {
 
 function Map() {
   const [isFirstRequest, setIsFirstRequest] = useState(true);
-  const { location, handleMapLoad, lat, lng } = useLocation();
+  const { location, handleMapLoad: handleLocationMapLoad, lat, lng } = useLocation();
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState(null);
+  const [mapZoom, setMapZoom] = useState(16);
+  const [mapRef, setMapRef] = useState(null);
 
   useEffect(() => {
     console.log({selectedLandmarks})
@@ -151,6 +153,28 @@ function Map() {
     setSelectedMarker(null);
   };
 
+  // Calculate circle radius based on zoom level
+  const getCircleRadius = (zoom) => {
+    return 25 * Math.pow(2, (16 - zoom)); // Base radius is 25 at zoom level 16
+  };
+
+  const handleGoogleMapLoad = useCallback((map) => {
+    setMapRef(map);
+    handleLocationMapLoad(map);
+  }, [handleLocationMapLoad]);
+
+  // Handle zoom changes
+  useEffect(() => {
+    if (mapRef) {
+      const listener = mapRef.addListener('zoom_changed', () => {
+        setMapZoom(mapRef.getZoom());
+      });
+      return () => {
+        window.google.maps.event.removeListener(listener);
+      };
+    }
+  }, [mapRef]);
+
   console.log({selectedLandmarks})
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
@@ -209,7 +233,7 @@ function Map() {
           }}
           center={selectedLandmarks[0]?.location || center}
           zoom={16}
-          onLoad={handleMapLoad}
+          onLoad={handleGoogleMapLoad}
           options={{
             styles: mapStyles,
             disableDefaultUI: false,
@@ -230,17 +254,34 @@ function Map() {
         >
           {/* Add custom markers */}
           {selectedLandmarks.map((landmark, index) => (
-            <Marker
-              key={index}
-              position={landmark.location}
-              onClick={() => handleMarkerClick(landmark)}
-              icon={{
-                url: landmark.photoUrl || 'https://via.placeholder.com/40', // Use fetched URL or fallback
-                scaledSize: new window.google.maps.Size(40, 40),
-                anchor: new window.google.maps.Point(20, 20),
-                borderRadius: '50%'
-              }}
-            />
+            <>
+              {/* Add circle for selected marker */}
+              {selectedMarker?.name === landmark.name && (
+                <Circle
+                  center={landmark.location}
+                  options={{
+                    strokeColor: '#FF69B4',
+                    strokeOpacity: 1,
+                    strokeWeight: 2,
+                    fillColor: 'transparent',
+                    fillOpacity: 0,
+                    radius: getCircleRadius(mapZoom),
+                    zIndex: 1
+                  }}
+                />
+              )}
+              <Marker
+                key={index}
+                position={landmark.location}
+                onClick={() => handleMarkerClick(landmark)}
+                icon={{
+                  url: landmark.photoUrl || 'https://via.placeholder.com/40',
+                  scaledSize: new window.google.maps.Size(40, 40),
+                  anchor: new window.google.maps.Point(20, 20),
+                  borderRadius: '50%'
+                }}
+              />
+            </>
           ))}
 
           {directions && (
