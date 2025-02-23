@@ -1,4 +1,26 @@
-export const recordButtonStyle = { position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 };
+export const recordButtonStyle = {
+  position: 'absolute',
+  bottom: '100px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  width: '64px',
+  height: '64px',
+  borderRadius: '50%',
+  border: 'none',
+  backgroundColor: 'rgba(32, 33, 36, 0.9)',
+  cursor: 'pointer',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.3)',
+  zIndex: 1000
+};
+
+export const micIconStyle = {
+  width: '24px',
+  height: '24px',
+  fill: '#ffffff'
+};
 
 export const waveContainerStyle = {
   position: 'absolute',

@@ -2,6 +2,8 @@ import { GoogleMap, LoadScript, DirectionsRenderer } from '@react-google-maps/ap
 import React, { useState, useCallback, useRef } from 'react';
 import RecordButton from './RecordButton';
 import TextBubble from './TextBubble';
+import useLocation from '../hooks/useLocation';
+import { mapStyles } from '../styles/mapStyles';
 
 const center = {
   lat: 35.6812362,  // Tokyo Station coordinates
@@ -10,128 +12,15 @@ const center = {
 
 const API_KEY = "AIzaSyAE7Pb7MSZTljD-xh8XFAd7Oumyoys4FK8";
 
-// Locations
-const TOKYO_STATION = { lat: 35.6812362, lng: 139.7671248 };
-const HOSHINOYA = { lat: 35.6853755, lng: 139.7670297 };
-
-const mapStyles = [
-  {
-    featureType: "administrative",
-    elementType: "geometry",
-    stylers: [{ visibility: "off" }]
-  },
-  {
-    featureType: "poi",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }]
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.icon",
-    stylers: [{ visibility: "off" }]
-  },
-  {
-    featureType: "landscape",
-    elementType: "geometry",
-    stylers: [{ color: "#f5f5f5" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#ffffff" }]
-  },
-  {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#e6e6e6" }]
-  },
-  {
-    featureType: "road.arterial",
-    elementType: "labels",
-    stylers: [{ visibility: "simplified" }]
-  },
-  {
-    featureType: "road.local",
-    elementType: "labels",
-    stylers: [{ visibility: "simplified" }]
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#c8d7d4" }]
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry.fill",
-    stylers: [{ color: "#d5e7d6" }]
-  },
-  {
-    featureType: "poi.business",
-    stylers: [{ visibility: "off" }]
-  },
-  {
-    featureType: "transit",
-    elementType: "labels.text",
-    stylers: [{ visibility: "simplified" }]
-  }
-];
-
-// Custom hook for handling location
-const useLocation = () => {
-  const [location, setLocation] = useState('Loading location...');
-  const mapRef = useRef(null); // Add this line to create the ref
-  
-  const handleMapLoad = useCallback((map) => {
-    console.log("handleMapLoad", "before")
-    // Early return if map is null or if we've already set up listeners
-    if (!map || mapRef.current === map) return;
-    console.log("handleMapLoad", "did not return early")
-    mapRef.current = map; // Store the map instance in the ref
-
-    const geocoder = new window.google.maps.Geocoder();
-
-    const updateLocation = () => {
-      const center = map.getCenter();
-      geocoder.geocode({ location: { lat: center.lat(), lng: center.lng() } })
-        .then((response) => {
-          if (response.results[0]) {
-            setLocation(response.results[0].formatted_address);
-          } else {
-            setLocation('Location not found');
-          }
-        })
-        .catch((error) => {
-          console.error('Geocoder failed:', error);
-          setLocation('Error getting location');
-        });
-    };
-
-    updateLocation();
-    map.addListener('idle', updateLocation);
-  }, []);
-
-  return { location, handleMapLoad };
-};
 
 function Map() {
-  const [isFirstRequest, setIsFirstRequest] = useState(true);
-  const { location, handleMapLoad } = useLocation();
+const [isFirstRequest, setIsFirstRequest] = useState(true);
+  const { location, handleMapLoad, lat, lng } = useLocation();
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
 
-  const landmarks = [
-    {
-      name: "Tokyo Station",
-      latitude: TOKYO_STATION.lat,
-      longitude: TOKYO_STATION.lng
-    },
-    {
-      name: "Hoshinoya Tokyo",
-      latitude: HOSHINOYA.lat,
-      longitude: HOSHINOYA.lng
-    }
-  ];
+
 
   const handleTranscriptionComplete = (text) => {
     console.log('Previous conversations:', conversations); // Debug log
@@ -202,7 +91,10 @@ function Map() {
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      <LoadScript googleMapsApiKey={API_KEY}>
+      <LoadScript 
+        googleMapsApiKey={API_KEY}
+        libraries={['places']}
+      >
         <GoogleMap
           mapContainerStyle={{
             height: '100vh',
@@ -272,8 +164,9 @@ function Map() {
         onTranscriptionComplete={handleTranscriptionComplete}
         onRequestComplete={handleRequestComplete}
         location={location}
-        landmarks={landmarks}
         isFirstRequest={isFirstRequest}
+        lat={lat}
+        lng={lng}
       />
     </div>
   );

@@ -7,7 +7,8 @@ import {
   waveBarStyle,
   waveAnimation,
   processingContainerStyle,
-  statusTextStyle
+  statusTextStyle,
+  micIconStyle
 } from '../styles/recordButton';
 
 const OPENAI_API_KEY = "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";
@@ -17,7 +18,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-function RecordButton({ onTranscriptionComplete, onRequestComplete, location, landmarks, isFirstRequest }) {
+function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng }) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [isTranscribing, setIsTranscribing] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
@@ -76,15 +77,14 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     
     try {
       const payload = {
-        city: location,
-        landmarks,
-        text: transcribedText,
-        is_first_request: isFirstRequest
+        city: {name: location, latitude: lat, longitude: lng},
+
+        //text: transcribedText,
+        //is_first_request: isFirstRequest
       };
 
-      /* [David] uncommont this when backend server works 
-
-      const response = await fetch('https://voice-view-backend-ef6f06a14ec9.herokuapp.com/process_city_landmarks_text', {
+   
+      const response = await fetch(`http://192.168.1.111:8000/answer?query=${transcribedText}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -92,32 +92,65 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
         body: JSON.stringify(payload)
       });
 
-      
       if (!response.ok) {
         throw new Error(`API call failed: ${response.statusText}`);
       }
 
-      const data = await response.json();
-      */
-      const mockResponse = {
-        response: '{"explanation": "Here is the best route for touring New York! Start at the iconic Statue of Liberty, then head to the bustling Times Square, and finish your tour at the peaceful Central Park.", "landmarks":[{"name":"Statue of Liberty","latitude":40.6892,"longitude":-74.0445},{"name":"Times Square","latitude":40.758,"longitude":-73.9855},{"name":"Central Park","latitude":40.7851,"longitude":-73.9683}]}'
-      };
+      const apiResponse = await response.json();
+
+      console.log(apiResponse);
       
-      // Parse the response string into an object
-      const parsedResponse = JSON.parse(mockResponse.response);
+      // Transform the API response to match expected format
       const data = {
-        ...mockResponse,
-        parsedLandmarks: parsedResponse.landmarks.map(landmark => ({
-          name: landmark.name,
+        response: JSON.stringify({
+          explanation: apiResponse.speech,
+          landmarks: apiResponse.locations
+        }),
+        parsedLandmarks: apiResponse.locations.map(landmark => ({
+          name: landmark.displayNames,
           location: { lat: landmark.latitude, lng: landmark.longitude }
-        })),
-        explanation: parsedResponse.explanation
+        }))
       };
-      
+     
+      /*
+      const response = {
+        "locations": [{"name":"Statue of Liberty","latitude":40.6892,"longitude":-74.0445},{"name":"Times Square","latitude":40.758,"longitude":-73.9855},{"name":"Central Park","latitude":40.7851,"longitude":-73.9683}],
+        "speech": "Hello! How can I assist you today in exploring Tokyo? Are there any specific places you're interested in, like historical sites, shopping districts, or perhaps a nice walk through a park?"
+      } */
+
+      // Call ElevenLabs API for text-to-speech
+      const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Default voice ID
+
+      console.log(data.response.speech);
+      const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': 'sk_cd394cf351cdaf1f0fe0330ff5bcba40cdfc01d1af7efb1e'
+        },
+        body: JSON.stringify({
+          text: apiResponse.speech,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.5,
+            speed:1.20
+          }
+        })
+      });
+
+      if (response_audio.ok) {
+        const audioBlob = await response_audio.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      }
+
       onRequestComplete(data);
       return data;
     } catch (error) {
-      console.error('Error sending to backend:', error);
+      console.error('Error:', error);
       throw error;
     } finally {
       setIsSending(false);
@@ -204,14 +237,15 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
         onMouseUp={handleRecordStop}
         style={{
           ...recordButtonStyle,
-          backgroundColor: isRecording ? '#ff4444' : 
-                         isTranscribing ? '#2196F3' :
-                         isSending ? '#9c27b0' : '#4CAF50',
+          backgroundColor: isRecording ? 'rgba(234, 67, 53, 0.9)' : 'rgba(32, 33, 36, 0.9)'
         }}
       >
-        {isRecording ? 'Recording...' : 
-         isTranscribing ? 'Transcribing...' :
-         isSending ? 'Sending...' : 'Press and Hold to Record'}
+        <svg 
+          viewBox="0 0 24 24" 
+          style={micIconStyle}
+        >
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 14.2 14.47 16 12 16s-4.52-1.8-4.93-4.15c-.08-.49-.49-.85-.98-.85-.61 0-1.09.54-1 1.14.49 3 2.89 5.35 5.91 5.78V20c0 .55.45 1 1 1s1-.45 1-1v-2.08c3.02-.43 5.42-2.78 5.91-5.78.1-.6-.39-1.14-1-1.14z"/>
+        </svg>
       </button>
     </>
   );
