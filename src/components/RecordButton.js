@@ -264,10 +264,19 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
       <button 
         onMouseDown={handleRecordStart}
         onMouseUp={handleRecordStop}
+        onTouchStart={(e) => {
+          e.preventDefault(); // Prevent default touch behavior
+          handleRecordStart();
+        }}
+        onTouchEnd={handleRecordStop}
+        onContextMenu={(e) => e.preventDefault()} // Prevent context menu
         style={{
           ...recordButtonStyle,
           backgroundColor: isRecording ? '#FF69B4' : 'rgba(32, 33, 36, 0.9)',
-          zIndex: 1000
+          zIndex: 1000,
+          WebkitTouchCallout: 'none', // Prevent iOS callout
+          WebkitUserSelect: 'none', // Prevent text selection
+          userSelect: 'none', // Prevent text selection
         }}
       >
         <svg 
