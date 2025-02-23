@@ -14,15 +14,16 @@ import {
   thinkingBubbleStyle,
   guideAvatarStyle
 } from '../styles/recordButton';
+import { API_KEYS } from '../config/api-keys';
 
-const OPENAI_API_KEY = "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";
+const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 
 const openai = new OpenAI({
   apiKey: OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
-function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, selectedLandmarks, isFirstRequest }) {
+function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, selectedLandmarks, isFirstRequest, isExploreMode }) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [isTranscribing, setIsTranscribing] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
@@ -76,6 +77,27 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     }
   };
 
+  const testImageSearch = async (query) => {
+    try {
+      const response = await fetch(
+        `https://www.googleapis.com/customsearch/v1?key=${API_KEYS.GOOGLE_SEARCH}&cx=${API_KEYS.GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
+      );
+      
+      if (!response.ok) {
+        throw new Error('Image search failed');
+      }
+      
+      const data = await response.json();
+      const imageUrl = data.items[0].link;
+      console.log("Found image URL:", imageUrl);
+      return imageUrl;
+    } catch (error) {
+      console.error("Error searching for image:", error);
+      return null;
+    }
+  };
+
+  
   const sendToBackend = async (transcribedText) => {
     setIsSending(true);
     setStatus('Sending to backend...');
@@ -108,23 +130,28 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
       console.log(apiResponse);
       
-      // Transform the API response to match expected format
+      // First, fetch all images in parallel
+      const landmarksWithImages = await Promise.all(
+        apiResponse.locations.map(async (landmark) => {
+          const photoUrl = await testImageSearch(landmark.displayName);
+          return {
+            name: landmark.displayName,
+            location: { lat: landmark.latitude, lng: landmark.longitude },
+            photoUrl: photoUrl
+          };
+        })
+      );
+
+      // Then create the data object with resolved image URLs
       const data = {
         response: JSON.stringify({
           explanation: apiResponse.speech,
           landmarks: apiResponse.locations
         }),
-        parsedLandmarks: apiResponse.locations.map(landmark => ({
-          name: landmark.displayNames,
-          location: { lat: landmark.latitude, lng: landmark.longitude }
-        }))
+        parsedLandmarks: landmarksWithImages
       };
-     
-      /*
-      const response = {
-        "locations": [{"name":"Statue of Liberty","latitude":40.6892,"longitude":-74.0445},{"name":"Times Square","latitude":40.758,"longitude":-73.9855},{"name":"Central Park","latitude":40.7851,"longitude":-73.9683}],
-        "speech": "Hello! How can I assist you today in exploring Tokyo? Are there any specific places you're interested in, like historical sites, shopping districts, or perhaps a nice walk through a park?"
-      } */
+
+      console.log("landmark data", {data});
 
       // Call ElevenLabs API for text-to-speech
       const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Default voice ID
@@ -135,7 +162,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
         headers: {
           'Accept': 'audio/mpeg',
           'Content-Type': 'application/json',
-          'xi-api-key': 'sk_cd394cf351cdaf1f0fe0330ff5bcba40cdfc01d1af7efb1e'
+          'xi-api-key': process.env.REACT_APP_ELEVENLABS_API_KEY
         },
         body: JSON.stringify({
           text: apiResponse.speech,
@@ -201,7 +228,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     }
   }, [recorderMediaBlobUrl]);
 
-  const shouldUseOverlay = isRecording || isTranscribing || isSending || (selectedLandmarks.length === 0 && !isFirstRequest)
+  const shouldUseOverlay = isRecording || isTranscribing || isSending || (selectedLandmarks.length === 0 && !isFirstRequest && !isExploreMode)
   const thinking = isTranscribing || isSending
   
   return (

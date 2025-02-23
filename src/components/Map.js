@@ -1,38 +1,65 @@
-import { GoogleMap, LoadScript, DirectionsRenderer, Marker } from '@react-google-maps/api';
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { GoogleMap, LoadScript, DirectionsRenderer, Marker, InfoWindow } from '@react-google-maps/api';
+import React, { useState, useCallback, useEffect, use } from 'react';
 import RecordButton from './RecordButton';
 import TextBubble from './TextBubble';
 import useLocation from '../hooks/useLocation';
 import { mapStyles } from '../styles/mapStyles';
+import { API_KEYS } from '../config/api-keys';
 
 const center = {
-  lat: 35.6812362,  // Tokyo Station coordinates
+  lat: 35.6812362,
   lng: 139.7671248
 };
 
-const API_KEY = "AIzaSyClvLVSInVxYLmk0FCgTge9JTRHmZgEmcM";
-const GOOGLE_SEARCH_API_KEY = "AIzaSyClvLVSInVxYLmk0FCgTge9JTRHmZgEmcM";
-const GOOGLE_SEARCH_ENGINE_ID = "b5db152f470904804";
+// Add new styles at the top
+const landmarkInfoStyle = {
+  position: 'fixed',
+  top: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: 'white',
+  borderRadius: '15px',
+  padding: '15px',
+  display: 'flex',
+  gap: '15px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  zIndex: 1000,
+  maxWidth: '90%',
+  width: '400px'
+};
 
-const testImageSearch = async () => {
-  try {
-    const query = "tokyo imperial palace";
-    const response = await fetch(
-      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
-    );
-    
-    if (!response.ok) {
-      throw new Error('Image search failed');
-    }
-    
-    const data = await response.json();
-    const imageUrl = data.items[0].link;
-    console.log("Found image URL:", imageUrl);
-    return imageUrl;
-  } catch (error) {
-    console.error("Error searching for image:", error);
-    return null;
-  }
+const landmarkImageStyle = {
+  width: '100px',
+  height: '100px',
+  borderRadius: '50%',
+  objectFit: 'cover',
+  border: '2px solid #FF69B4'
+};
+
+const landmarkTextStyle = {
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center'
+};
+
+// Add to styles at the top
+const buttonStyle = {
+  border: 'none',
+  padding: '8px 16px',
+  borderRadius: '20px',
+  cursor: 'pointer',
+  fontSize: '14px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '5px'
+};
+
+const removeButtonStyle = {
+  ...buttonStyle,
+  backgroundColor: '#FFE4E9',
+  color: '#FF69B4',
+  marginTop: '10px'
 };
 
 function Map() {
@@ -41,8 +68,13 @@ function Map() {
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
-  const [testImage, setTestImage] = useState(null);
   const [isExploreMode, setIsExploreMode] = useState(false);
+  const [selectedMarker, setSelectedMarker] = useState(null);
+
+  useEffect(() => {
+    console.log({selectedLandmarks})
+    requestDirections(selectedLandmarks);
+  }, [selectedLandmarks])
 
   const handleTranscriptionComplete = (text) => {
     console.log('Previous conversations:', conversations); // Debug log
@@ -69,9 +101,10 @@ function Map() {
       return updated;
     });
 
-    if (response.parsedLandmarks && response.parsedLandmarks.length > 0) {
+    if (response.parsedLandmarks && response.parsedLandmarks.length > 0 && !isExploreMode) {
       setSelectedLandmarks(response.parsedLandmarks);
       requestDirections(response.parsedLandmarks);
+      setIsExploreMode(true);
     }
   };
 
@@ -109,21 +142,64 @@ function Map() {
     setConversations(prev => prev.filter((_, i) => i !== index));
   };
 
-  useEffect(() => {
-    testImageSearch().then(url => setTestImage(url));
-  }, []);
+  const handleMarkerClick = (landmark) => {
+    setSelectedMarker(landmark);
+  };
 
-  console.log({conversations})
+  const removeLandmark = (landmarkToRemove) => {
+    setSelectedLandmarks(prev => prev.filter(landmark => landmark.name !== landmarkToRemove.name));
+    setSelectedMarker(null);
+  };
 
+  console.log({selectedLandmarks})
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {testImage && (
-        <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
-          <img src={testImage} alt="Test landmark" style={{ width: 100, height: 100, objectFit: 'cover' }} />
+      {/* Add landmark info display */}
+      {selectedMarker && (
+        <div style={landmarkInfoStyle}>
+          <img 
+            src={selectedMarker.photoUrl} 
+            alt={selectedMarker.name}
+            style={landmarkImageStyle}
+          />
+          <div style={landmarkTextStyle}>
+            <h3 style={{ 
+              margin: '0 0 8px 0',
+              color: '#333',
+              fontSize: '20px'
+            }}>
+              {selectedMarker.name}
+            </h3>
+            <button 
+              onClick={() => removeLandmark(selectedMarker)}
+              style={removeButtonStyle}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="#FF69B4">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+              Remove from route
+            </button>
+            <button 
+              onClick={() => setSelectedMarker(null)}
+              style={{
+                position: 'absolute',
+                top: '10px',
+                right: '10px',
+                border: 'none',
+                background: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#666'
+              }}
+            >
+              ×
+            </button>
+          </div>
         </div>
       )}
+
       <LoadScript 
-        googleMapsApiKey={API_KEY}
+        googleMapsApiKey={API_KEYS.GOOGLE_MAPS}
         libraries={['places']}
       >
         <GoogleMap
@@ -157,6 +233,7 @@ function Map() {
             <Marker
               key={index}
               position={landmark.location}
+              onClick={() => handleMarkerClick(landmark)}
               icon={{
                 url: landmark.photoUrl || 'https://via.placeholder.com/40', // Use fetched URL or fallback
                 scaledSize: new window.google.maps.Size(40, 40),
@@ -170,7 +247,7 @@ function Map() {
             <DirectionsRenderer
               directions={directions}
               options={{
-                suppressMarkers: false, // Hide default A,B,C markers
+                suppressMarkers: true, // Hide default A,B,C markers
                 polylineOptions: {
                   strokeColor: '#FF69B4',
                   strokeWeight: 4
@@ -213,9 +290,8 @@ function Map() {
         lat={lat}
         lng={lng}
         selectedLandmarks={selectedLandmarks}
+        isExploreMode={isExploreMode}
       />
-
-      
     </div>
   );
 }
