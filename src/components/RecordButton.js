@@ -167,8 +167,6 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
   return (
     <>
-      <div style={{ position: 'absolute', bottom: '100px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>hello</div>
-
       {isRecording && (
         <div style={waveContainerStyle}>
           {waveStyles.map((style, index) => (

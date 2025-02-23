@@ -34,4 +34,18 @@ export const responseContainerStyle = {
   padding: '10px',
   borderRadius: '4px',
   overflow: 'auto'
+};
+
+export const textBubbleContainerStyle = {
+  position: 'absolute',
+  top: '20px',
+  left: '0',
+  right: '0',
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '10px',
+  padding: '0 20px',
+  maxHeight: '60vh',
+  overflowY: 'auto',
+  zIndex: 1000
 }; 

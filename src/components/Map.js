@@ -1,10 +1,6 @@
-import { GoogleMap, LoadScript, DirectionsService, DirectionsRenderer } from '@react-google-maps/api';
-import React, { useState, useCallback } from 'react';
+import { GoogleMap, LoadScript, DirectionsRenderer } from '@react-google-maps/api';
+import React, { useState, useCallback, useRef } from 'react';
 import RecordButton from './RecordButton';
-import {
-  containerStyle,
-  controlsContainerStyle,
-} from '../styles/map';
 import TextBubble from './TextBubble';
 
 const center = {
@@ -80,28 +76,17 @@ const mapStyles = [
   }
 ];
 
-
-// Custom hook for handling directions
-const useDirections = () => {
-  const [directionsResponse, setDirectionsResponse] = useState(null);
-
-  const directionsCallback = useCallback((response) => {
-    if (response !== null && response.status === 'OK') {
-      setDirectionsResponse(response);
-    } else {
-      console.error('Directions request failed');
-    }
-  }, []);
-
-  return { directionsResponse, directionsCallback };
-};
-
 // Custom hook for handling location
 const useLocation = () => {
   const [location, setLocation] = useState('Loading location...');
-
+  const mapRef = useRef(null); // Add this line to create the ref
+  
   const handleMapLoad = useCallback((map) => {
-    if (!map) return;
+    console.log("handleMapLoad", "before")
+    // Early return if map is null or if we've already set up listeners
+    if (!map || mapRef.current === map) return;
+    console.log("handleMapLoad", "did not return early")
+    mapRef.current = map; // Store the map instance in the ref
 
     const geocoder = new window.google.maps.Geocoder();
 
@@ -129,11 +114,8 @@ const useLocation = () => {
 };
 
 function Map() {
-  const [mediaBlobUrl, setMediaBlobUrl] = useState(null);
   const [isFirstRequest, setIsFirstRequest] = useState(true);
   const { location, handleMapLoad } = useLocation();
-  const [transcribedText, setTranscribedText] = useState(null);
-  const [apiResponse, setApiResponse] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
@@ -151,13 +133,8 @@ function Map() {
     }
   ];
 
-  const handleRecordingComplete = (blobUrl) => {
-    setMediaBlobUrl(blobUrl);
-  };
-
   const handleTranscriptionComplete = (text) => {
     console.log('Previous conversations:', conversations); // Debug log
-    setTranscribedText(text);
     setConversations(prev => {
       console.log('Adding new conversation to:', prev); // Debug log
       return [...prev, { text, apiResponse: null }];
@@ -166,7 +143,6 @@ function Map() {
 
   const handleRequestComplete = (response) => {
     setIsFirstRequest(false);
-    setApiResponse(response);
     console.log('Updating conversation with response:', response); // Debug log
     setConversations(prev => {
       console.log('Current conversations before update:', prev); // Debug log
@@ -293,7 +269,6 @@ function Map() {
       </div>
       
       <RecordButton 
-        onRecordingComplete={handleRecordingComplete}
         onTranscriptionComplete={handleTranscriptionComplete}
         onRequestComplete={handleRequestComplete}
         location={location}
