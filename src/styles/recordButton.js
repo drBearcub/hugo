@@ -99,4 +99,46 @@ export const overlayTextStyle = {
   color: '#EA4335',
   marginTop: '20px',
   fontWeight: '500'
+};
+
+export const transcriptionBubbleStyle = {
+  position: 'absolute',
+  bottom: '200px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: 'rgba(255, 255, 255, 0.95)',
+  padding: '15px 25px',
+  borderRadius: '25px',
+  maxWidth: '80%',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  zIndex: 1000,
+  fontSize: '16px',
+  color: '#000',
+  textAlign: 'center'
+};
+
+export const thinkingBubbleStyle = {
+  position: 'fixed',
+  top: '20px',
+  left: '50%',
+  transform: 'translateX(-50%)',
+  backgroundColor: 'white',
+  borderRadius: '30px',
+  padding: '12px 24px',
+  display: 'flex',
+  alignItems: 'center',
+  gap: '12px',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
+  zIndex: 1000
+};
+
+export const guideAvatarStyle = {
+  width: '40px',
+  height: '40px',
+  borderRadius: '50%',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: '#FF69B4',
+  color: 'white'
 }; 

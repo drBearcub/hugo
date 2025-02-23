@@ -10,6 +10,9 @@ import {
   statusTextStyle,
   micIconStyle,
   overlayStyle,
+  transcriptionBubbleStyle,
+  thinkingBubbleStyle,
+  guideAvatarStyle
 } from '../styles/recordButton';
 
 const OPENAI_API_KEY = "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";
@@ -19,12 +22,13 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, shouldDisplayOverlay, isFirstRequest }) {
+function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, selectedLandmarks, isFirstRequest }) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [isTranscribing, setIsTranscribing] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
   const [status, setStatus] = React.useState('');
-  
+  const [transcribedText, setTranscribedText] = React.useState('');
+
   const [waveStyles] = React.useState(() => 
     Array(8).fill(null).map((_, i) => ({
       ...waveBarStyle,
@@ -85,7 +89,9 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
       };
 
    
-      const response = await fetch(`http://192.168.1.111:8000/answer?query=${transcribedText}`, {
+      //const response = await fetch(`http://192.168.1.111:8000/answer?query=${transcribedText}`, {
+
+      const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${transcribedText}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -94,6 +100,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
       });
 
       if (!response.ok) {
+        console.log(response);
         throw new Error(`API call failed: ${response.statusText}`);
       }
 
@@ -161,24 +168,18 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
   const handleProcessing = async () => {
     // Step 1: Transcribe Audio
-    let transcribedText;
     try {
-      transcribedText = await transcribeAudio(recorderMediaBlobUrl);
-      console.log('Transcription completed:', transcribedText);
-      onTranscriptionComplete(transcribedText);
-    } catch (error) {
-      console.error('Transcription error:', error);
-      setStatus('Error transcribing audio: ' + error);
-      return;
-    }
+      const text = await transcribeAudio(recorderMediaBlobUrl);
+      console.log('Transcription completed:', text);
+      setTranscribedText(text); // Store transcribed text
+      onTranscriptionComplete(text);
 
-    // Step 2: Send to Backend
-    try {
-      const response = await sendToBackend(transcribedText);
+      // Step 2: Send to Backend
+      const response = await sendToBackend(text);
       console.log('Backend response received:', response);
     } catch (error) {
-      console.error('Backend error:', error);
-      setStatus('Error sending to backend: ' + error);
+      console.error('Error:', error);
+      setStatus('Error: ' + error);
     }
   };
 
@@ -186,6 +187,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     setIsRecording(true);
     setStatus('Recording...');
     startRecording();
+    setTranscribedText('');
   };
 
   const handleRecordStop = () => {
@@ -199,11 +201,31 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     }
   }, [recorderMediaBlobUrl]);
 
-  const shouldUseOverlay = isRecording || isTranscribing || isSending || shouldDisplayOverlay
+  const shouldUseOverlay = isRecording || isTranscribing || isSending || (selectedLandmarks.length === 0 && !isFirstRequest)
+  const thinking = isTranscribing || isSending
+  
   return (
     <>
+      {thinking && (
+        <div style={thinkingBubbleStyle}>
+          <div style={guideAvatarStyle}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+            </svg>
+          </div>
+          <span>Guide is thinking...</span>
+        </div>
+      )}
+
       {shouldUseOverlay && (
         <div style={overlayStyle}>
+        </div>
+      )}
+
+      {/* Show transcription bubble when text exists */}
+      {shouldUseOverlay && transcribedText && (
+        <div style={transcriptionBubbleStyle}>
+          {transcribedText}
         </div>
       )}
 

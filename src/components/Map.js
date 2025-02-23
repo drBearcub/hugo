@@ -1,5 +1,5 @@
 import { GoogleMap, LoadScript, DirectionsRenderer, Marker } from '@react-google-maps/api';
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import RecordButton from './RecordButton';
 import TextBubble from './TextBubble';
 import useLocation from '../hooks/useLocation';
@@ -11,7 +11,29 @@ const center = {
 };
 
 const API_KEY = "AIzaSyClvLVSInVxYLmk0FCgTge9JTRHmZgEmcM";
+const GOOGLE_SEARCH_API_KEY = "AIzaSyClvLVSInVxYLmk0FCgTge9JTRHmZgEmcM";
+const GOOGLE_SEARCH_ENGINE_ID = "b5db152f470904804";
 
+const testImageSearch = async () => {
+  try {
+    const query = "tokyo imperial palace";
+    const response = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_SEARCH_API_KEY}&cx=${GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
+    );
+    
+    if (!response.ok) {
+      throw new Error('Image search failed');
+    }
+    
+    const data = await response.json();
+    const imageUrl = data.items[0].link;
+    console.log("Found image URL:", imageUrl);
+    return imageUrl;
+  } catch (error) {
+    console.error("Error searching for image:", error);
+    return null;
+  }
+};
 
 function Map() {
   const [isFirstRequest, setIsFirstRequest] = useState(true);
@@ -19,8 +41,8 @@ function Map() {
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
-
-
+  const [testImage, setTestImage] = useState(null);
+  const [isExploreMode, setIsExploreMode] = useState(false);
 
   const handleTranscriptionComplete = (text) => {
     console.log('Previous conversations:', conversations); // Debug log
@@ -47,8 +69,8 @@ function Map() {
       return updated;
     });
 
-    setSelectedLandmarks(response.parsedLandmarks);
     if (response.parsedLandmarks && response.parsedLandmarks.length > 0) {
+      setSelectedLandmarks(response.parsedLandmarks);
       requestDirections(response.parsedLandmarks);
     }
   };
@@ -87,10 +109,19 @@ function Map() {
     setConversations(prev => prev.filter((_, i) => i !== index));
   };
 
+  useEffect(() => {
+    testImageSearch().then(url => setTestImage(url));
+  }, []);
+
   console.log({conversations})
 
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
+      {testImage && (
+        <div style={{ position: 'absolute', top: 20, right: 20, zIndex: 1000 }}>
+          <img src={testImage} alt="Test landmark" style={{ width: 100, height: 100, objectFit: 'cover' }} />
+        </div>
+      )}
       <LoadScript 
         googleMapsApiKey={API_KEY}
         libraries={['places']}
@@ -181,8 +212,10 @@ function Map() {
         isFirstRequest={isFirstRequest}
         lat={lat}
         lng={lng}
-        shouldDisplayOverlay={!isFirstRequest && selectedLandmarks.length === 0}
+        selectedLandmarks={selectedLandmarks}
       />
+
+      
     </div>
   );
 }
