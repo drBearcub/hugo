@@ -124,12 +124,13 @@ export const thinkingBubbleStyle = {
   transform: 'translateX(-50%)',
   backgroundColor: 'white',
   borderRadius: '30px',
-  padding: '12px 24px',
+  padding: '15px 30px',
   display: 'flex',
   alignItems: 'center',
-  gap: '12px',
+  gap: '15px',
   boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  zIndex: 1000
+  zIndex: 1000,
+  maxWidth: '90%'
 };
 
 export const guideAvatarStyle = {

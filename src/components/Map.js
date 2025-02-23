@@ -144,8 +144,67 @@ function Map() {
     setConversations(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleMarkerClick = (landmark) => {
+  const handleMarkerClick = async (landmark) => {
     setSelectedMarker(landmark);
+
+    const prompt = `Tell me about ${landmark.name} in four or 5 sentences.`;
+
+    const payload = {
+      city: {name: location, latitude: lat, longitude: lng},
+      is_first_request: false
+    };
+
+    try {
+      const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${prompt}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.statusText}`);
+      }
+
+      const apiResponse = await response.json();
+
+      console.log(apiResponse);
+      
+      // Call ElevenLabs API for text-to-speech
+      const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
+
+      const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': process.env.REACT_APP_ELEVENLABS_API_KEY
+        },
+        body: JSON.stringify({
+          text: apiResponse.speech,
+          model_id: 'eleven_monolingual_v1',
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            speed:1.00
+          }
+        })
+      });
+
+      if (response_audio.ok) {
+        const audioBlob = await response_audio.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        audio.play();
+      }
+
+      // Update the UI with the description
+      // TODO: Add description to the landmark info display
+
+    } catch (error) {
+      console.error('Error fetching landmark description:', error);
+    }
   };
 
   const removeLandmark = (landmarkToRemove) => {

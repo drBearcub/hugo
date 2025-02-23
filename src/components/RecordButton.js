@@ -12,9 +12,9 @@ import {
   overlayStyle,
   transcriptionBubbleStyle,
   thinkingBubbleStyle,
-  guideAvatarStyle
 } from '../styles/recordButton';
 import { API_KEYS } from '../config/api-keys';
+import guideAvatar from '../pangpang.png';
 
 const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
 
@@ -105,13 +105,8 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     try {
       const payload = {
         city: {name: location, latitude: lat, longitude: lng},
-        
-        //text: transcribedText,
         is_first_request: isFirstRequest
       };
-
-   
-      //const response = await fetch(`http://192.168.1.111:8000/answer?query=${transcribedText}`, {
 
       const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${transcribedText}`, {
         method: 'POST',
@@ -154,7 +149,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
       console.log("landmark data", {data});
 
       // Call ElevenLabs API for text-to-speech
-      const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Default voice ID
+      const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
 
       console.log(data.response.speech);
       const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
@@ -169,8 +164,8 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
           model_id: 'eleven_monolingual_v1',
           voice_settings: {
             stability: 0.5,
-            similarity_boost: 0.5,
-            speed:1.20
+            similarity_boost: 0.75,
+            speed:1.00
           }
         })
       });
@@ -235,12 +230,21 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     <>
       {thinking && (
         <div style={thinkingBubbleStyle}>
-          <div style={guideAvatarStyle}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
-              <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-            </svg>
-          </div>
-          <span>Guide is thinking...</span>
+          <img 
+            src={guideAvatar}
+            alt="Guide avatar"
+            style={{
+              width: '60px',
+              height: '60px',
+              objectFit: 'contain'
+            }}
+          />
+          <span style={{
+            fontSize: '16px',
+            color: '#333'
+          }}>
+            Guide is thinking...
+          </span>
         </div>
       )}
 
