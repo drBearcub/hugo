@@ -24,28 +24,30 @@ export const micIconStyle = {
 
 export const waveContainerStyle = {
   position: 'absolute',
-  bottom: '80px',
+  bottom: '180px',
   left: '50%',
   transform: 'translateX(-50%)',
   display: 'flex',
-  gap: '3px',
-  height: '30px',
+  gap: '2px',
+  height: '40px',
+  width: '200px',
   alignItems: 'center',
+  justifyContent: 'center',
   zIndex: 1000
 };
 
 export const waveBarStyle = {
-  width: '3px',
-  backgroundColor: 'white',
-  borderRadius: '3px',
-  animation: 'soundWave 1s ease-in-out infinite',
+  width: '4px',
+  backgroundColor: '#FF69B4',
+  borderRadius: '2px',
+  animation: 'soundWave 1.2s ease-in-out infinite',
   boxShadow: '0 0 5px rgba(0,0,0,0.2)',
   zIndex: 1000
 };
 
 export const processingContainerStyle = {
   position: 'absolute',
-  bottom: '80px',
+  bottom: '180px',
   left: '50%',
   transform: 'translateX(-50%)',
   zIndex: 1000
@@ -53,7 +55,7 @@ export const processingContainerStyle = {
 
 export const statusTextStyle = {
   position: 'absolute',
-  bottom: '75px',
+  bottom: '50px',
   left: '50%',
   transform: 'translateX(-50%)',
   color: 'white',
@@ -66,13 +68,35 @@ export const statusTextStyle = {
 
 export const waveAnimation = `
   @keyframes soundWave {
-    0% { height: 3px; }
-    50% { height: 20px; }
-    100% { height: 3px; }
+    0% { height: 4px; opacity: 0.3; }
+    50% { height: 25px; opacity: 1; }
+    100% { height: 4px; opacity: 0.3; }
   }
   
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
   }
-`; 
+`;
+
+export const overlayStyle = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 999,
+  color: '#fff',
+  fontSize: '18px'
+};
+
+export const overlayTextStyle = {
+  color: '#EA4335',
+  marginTop: '20px',
+  fontWeight: '500'
+}; 

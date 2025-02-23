@@ -8,7 +8,8 @@ import {
   waveAnimation,
   processingContainerStyle,
   statusTextStyle,
-  micIconStyle
+  micIconStyle,
+  overlayStyle,
 } from '../styles/recordButton';
 
 const OPENAI_API_KEY = "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";
@@ -18,7 +19,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true
 });
 
-function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng }) {
+function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, shouldDisplayOverlay, isFirstRequest }) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [isTranscribing, setIsTranscribing] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
@@ -78,9 +79,9 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     try {
       const payload = {
         city: {name: location, latitude: lat, longitude: lng},
-
+        
         //text: transcribedText,
-        //is_first_request: isFirstRequest
+        is_first_request: isFirstRequest
       };
 
    
@@ -198,8 +199,14 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     }
   }, [recorderMediaBlobUrl]);
 
+  const shouldUseOverlay = isRecording || isTranscribing || isSending || shouldDisplayOverlay
   return (
     <>
+      {shouldUseOverlay && (
+        <div style={overlayStyle}>
+        </div>
+      )}
+
       {isRecording && (
         <div style={waveContainerStyle}>
           {waveStyles.map((style, index) => (
@@ -215,7 +222,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
               cx="12"
               cy="12"
               r="10"
-              stroke={isTranscribing ? "#2196F3" : "#9c27b0"}
+              stroke={isTranscribing ? "#2196F3" : "#FF69B4"}
               strokeWidth="3"
               fill="none"
               style={{
@@ -237,7 +244,8 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
         onMouseUp={handleRecordStop}
         style={{
           ...recordButtonStyle,
-          backgroundColor: isRecording ? 'rgba(234, 67, 53, 0.9)' : 'rgba(32, 33, 36, 0.9)'
+          backgroundColor: isRecording ? '#FF69B4' : 'rgba(32, 33, 36, 0.9)',
+          zIndex: 1000
         }}
       >
         <svg 

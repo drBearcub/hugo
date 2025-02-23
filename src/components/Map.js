@@ -1,4 +1,4 @@
-import { GoogleMap, LoadScript, DirectionsRenderer } from '@react-google-maps/api';
+import { GoogleMap, LoadScript, DirectionsRenderer, Marker } from '@react-google-maps/api';
 import React, { useState, useCallback, useRef } from 'react';
 import RecordButton from './RecordButton';
 import TextBubble from './TextBubble';
@@ -10,11 +10,11 @@ const center = {
   lng: 139.7671248
 };
 
-const API_KEY = "AIzaSyAE7Pb7MSZTljD-xh8XFAd7Oumyoys4FK8";
+const API_KEY = "AIzaSyClvLVSInVxYLmk0FCgTge9JTRHmZgEmcM";
 
 
 function Map() {
-const [isFirstRequest, setIsFirstRequest] = useState(true);
+  const [isFirstRequest, setIsFirstRequest] = useState(true);
   const { location, handleMapLoad, lat, lng } = useLocation();
   const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
@@ -47,8 +47,8 @@ const [isFirstRequest, setIsFirstRequest] = useState(true);
       return updated;
     });
 
+    setSelectedLandmarks(response.parsedLandmarks);
     if (response.parsedLandmarks && response.parsedLandmarks.length > 0) {
-      setSelectedLandmarks(response.parsedLandmarks);
       requestDirections(response.parsedLandmarks);
     }
   };
@@ -71,7 +71,7 @@ const [isFirstRequest, setIsFirstRequest] = useState(true);
         destination,
         waypoints,
         travelMode: window.google.maps.TravelMode.WALKING,
-        optimizeWaypoints: true
+        //optimizeWaypoints: true  [david] here is how we optimize the way points
       },
       (result, status) => {
         if (status === 'OK') {
@@ -121,13 +121,27 @@ const [isFirstRequest, setIsFirstRequest] = useState(true);
             maxZoom: 20
           }}
         >
+          {/* Add custom markers */}
+          {selectedLandmarks.map((landmark, index) => (
+            <Marker
+              key={index}
+              position={landmark.location}
+              icon={{
+                url: landmark.photoUrl || 'https://via.placeholder.com/40', // Use fetched URL or fallback
+                scaledSize: new window.google.maps.Size(40, 40),
+                anchor: new window.google.maps.Point(20, 20),
+                borderRadius: '50%'
+              }}
+            />
+          ))}
+
           {directions && (
             <DirectionsRenderer
               directions={directions}
               options={{
-                suppressMarkers: false,
+                suppressMarkers: false, // Hide default A,B,C markers
                 polylineOptions: {
-                  strokeColor: '#2196F3',
+                  strokeColor: '#FF69B4',
                   strokeWeight: 4
                 }
               }}
@@ -167,6 +181,7 @@ const [isFirstRequest, setIsFirstRequest] = useState(true);
         isFirstRequest={isFirstRequest}
         lat={lat}
         lng={lng}
+        shouldDisplayOverlay={!isFirstRequest && selectedLandmarks.length === 0}
       />
     </div>
   );
