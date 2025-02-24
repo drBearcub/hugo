@@ -149,7 +149,7 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
 
 
       // Call ElevenLabs API for text-to-speech
-      const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
+      const voiceId = process.env.REACT_APP_ELEVENLABS_VOICE_ID;
 
       setResponse(apiResponse.speech);
 

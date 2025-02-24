@@ -130,7 +130,7 @@ function Map() {
       console.log(apiResponse);
       setTellMeAboutLandmark(apiResponse.speech);
       // Call ElevenLabs API for text-to-speech
-      const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
+      const voiceId = process.env.REACT_APP_ELEVENLABS_VOICE_ID;
 
       const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
         method: 'POST',
