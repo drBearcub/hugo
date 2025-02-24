@@ -1,14 +1,13 @@
 import { GoogleMap, LoadScript, DirectionsRenderer, Marker, InfoWindow, Circle } from '@react-google-maps/api';
 import React, { useState, useCallback, useEffect, use } from 'react';
 import RecordButton from './RecordButton';
-import TextBubble from './TextBubble';
 import useLocation from '../hooks/useLocation';
 import { mapStyles } from '../styles/mapStyles';
 import { API_KEYS } from '../config/api-keys';
 
 const center = {
-  lat: 35.6812362,
-  lng: 139.7671248
+  lat: 37.7749,
+  lng: -122.4194
 };
 
 // Add new styles at the top
@@ -25,7 +24,7 @@ const landmarkInfoStyle = {
   boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   zIndex: 1000,
   maxWidth: '90%',
-  width: '400px'
+  width: '600px'
 };
 
 const landmarkImageStyle = {
@@ -39,20 +38,22 @@ const landmarkImageStyle = {
 const landmarkTextStyle = {
   flex: 1,
   display: 'flex',
-  flexDirection: 'column',
-  justifyContent: 'center'
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: '10px'
 };
 
 // Add to styles at the top
 const buttonStyle = {
   border: 'none',
-  padding: '8px 16px',
-  borderRadius: '20px',
+  padding: '6px 12px',
+  borderRadius: '15px',
   cursor: 'pointer',
-  fontSize: '14px',
+  fontSize: '12px',
   display: 'flex',
   alignItems: 'center',
-  gap: '5px'
+  gap: '4px'
 };
 
 const removeButtonStyle = {
@@ -60,6 +61,23 @@ const removeButtonStyle = {
   backgroundColor: '#FFE4E9',
   color: '#FF69B4',
   marginTop: '10px'
+};
+
+// Add this near other style constants
+const ratingStyle = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: '4px',
+  fontSize: '14px',
+  color: '#666'
+};
+
+// Add new style for description
+const descriptionStyle = {
+  margin: '12px 0 0 0',
+  color: '#666',
+  fontSize: '14px',
+  lineHeight: '1.4'
 };
 
 function Map() {
@@ -70,9 +88,7 @@ function Map() {
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
   const [isExploreMode, setIsExploreMode] = useState(false);
   const [selectedMarker, setSelectedMarker] = useState(null);
-  const [mapZoom, setMapZoom] = useState(16);
-  const [mapRef, setMapRef] = useState(null);
-  const [response, setResponse] = useState(null);
+  const [tellMeAboutLandmark, setTellMeAboutLandmark] = useState(null);
 
   useEffect(() => {
     console.log({selectedLandmarks})
@@ -104,7 +120,11 @@ function Map() {
       return updated;
     });
 
+    console.log("before setting state, ", {response})
+
     if (response.parsedLandmarks && response.parsedLandmarks.length > 0 && !isExploreMode) {
+      console.log("should set state, ", {response})
+
       setSelectedLandmarks(response.parsedLandmarks);
       requestDirections(response.parsedLandmarks);
       setIsExploreMode(true);
@@ -168,7 +188,7 @@ function Map() {
       const apiResponse = await response.json();
 
       console.log(apiResponse);
-      
+      setTellMeAboutLandmark(apiResponse.speech);
       // Call ElevenLabs API for text-to-speech
       const voiceId = "TM06xeVjGogwgQkF4GaW"; // Default voice ID
 
@@ -180,6 +200,7 @@ function Map() {
           'xi-api-key': process.env.REACT_APP_ELEVENLABS_API_KEY
         },
         body: JSON.stringify({
+          //[david] set with this guy
           text: apiResponse.speech,
           model_id: 'eleven_monolingual_v1',
           voice_settings: {
@@ -210,28 +231,11 @@ function Map() {
     setSelectedMarker(null);
   };
 
-  // Calculate circle radius based on zoom level
-  const getCircleRadius = (zoom) => {
-    return 25 * Math.pow(2, (16 - zoom)); // Base radius is 25 at zoom level 16
-  };
-
   const handleGoogleMapLoad = useCallback((map) => {
-    setMapRef(map);
     handleLocationMapLoad(map);
   }, [handleLocationMapLoad]);
 
-  // Handle zoom changes
-  useEffect(() => {
-    if (mapRef) {
-      const listener = mapRef.addListener('zoom_changed', () => {
-        setMapZoom(mapRef.getZoom());
-      });
-      return () => {
-        window.google.maps.event.removeListener(listener);
-      };
-    }
-  }, [mapRef]);
-
+  console.log({selectedMarker})
   console.log({selectedLandmarks})
   return (
     <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
@@ -244,36 +248,45 @@ function Map() {
             style={landmarkImageStyle}
           />
           <div style={landmarkTextStyle}>
-            <h3 style={{ 
-              margin: '0 0 8px 0',
-              color: '#333',
-              fontSize: '20px'
-            }}>
-              {selectedMarker.name}
-            </h3>
+            <div style={{ flex: 1 }}>
+              <h4 style={{ 
+                margin: '0 0 4px 0',  // Added bottom margin for rating
+                color: '#333',
+                fontSize: '20px',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis'
+              }}>
+                {selectedMarker.name}
+              </h4>
+              <div style={ratingStyle}>
+                {/* Star rating */}
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} style={{ color: i < (selectedMarker.rating || 0) ? '#FFD700' : '#E0E0E0' }}>
+                    ★
+                  </span>
+                ))}
+                {selectedMarker.rating && 
+                  <span style={{ marginLeft: '4px' }}>{selectedMarker.rating.toFixed(1)}</span>
+                }
+              </div>
+              <p style={descriptionStyle}>
+                {tellMeAboutLandmark || 'Loading description...'}
+              </p>
+            </div>
             <button 
               onClick={() => removeLandmark(selectedMarker)}
-              style={removeButtonStyle}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="#FF69B4">
-                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-              </svg>
-              Remove from route
-            </button>
-            <button 
-              onClick={() => setSelectedMarker(null)}
               style={{
-                position: 'absolute',
-                top: '10px',
-                right: '10px',
-                border: 'none',
-                background: 'none',
-                fontSize: '20px',
-                cursor: 'pointer',
-                color: '#666'
+                ...removeButtonStyle,
+                marginTop: 0,
+                flexShrink: 0,
+                alignSelf: 'flex-start' // Align button to top when description is present
               }}
             >
-              ×
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="#FF69B4">
+                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+              </svg>
+              Remove
             </button>
           </div>
         </div>
@@ -312,21 +325,6 @@ function Map() {
           {/* Add custom markers */}
           {selectedLandmarks.map((landmark, index) => (
             <>
-              {/* Add circle for selected marker */}
-              {selectedMarker?.name === landmark.name && (
-                <Circle
-                  center={landmark.location}
-                  options={{
-                    strokeColor: '#FF69B4',
-                    strokeOpacity: 1,
-                    strokeWeight: 2,
-                    fillColor: 'transparent',
-                    fillOpacity: 0,
-                    radius: getCircleRadius(mapZoom),
-                    zIndex: 1
-                  }}
-                />
-              )}
               <Marker
                 key={index}
                 position={landmark.location}

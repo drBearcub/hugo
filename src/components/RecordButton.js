@@ -6,7 +6,6 @@ import {
   waveContainerStyle,
   waveBarStyle,
   waveAnimation,
-  processingContainerStyle,
   statusTextStyle,
   micIconStyle,
   overlayStyle,
@@ -133,7 +132,8 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
           return {
             name: landmark.displayName,
             location: { lat: landmark.latitude, lng: landmark.longitude },
-            photoUrl: photoUrl
+            photoUrl: photoUrl,
+            rating: landmark.rating
           };
         })
       );
