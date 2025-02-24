@@ -4,81 +4,20 @@ import RecordButton from './RecordButton';
 import useLocation from '../hooks/useLocation';
 import { mapStyles } from '../styles/mapStyles';
 import { API_KEYS } from '../config/api-keys';
+import {
+  landmarkInfoStyle,
+  landmarkImageStyle,
+  landmarkTextStyle,
+  removeButtonStyle,
+  ratingStyle,
+  descriptionStyle,
+  landmarkTitleStyle,
+  mapContainerStyle
+} from '../styles/mapStyles';
 
 const center = {
   lat: 37.7749,
   lng: -122.4194
-};
-
-// Add new styles at the top
-const landmarkInfoStyle = {
-  position: 'fixed',
-  top: '20px',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: 'white',
-  borderRadius: '15px',
-  padding: '2px',
-  display: 'flex',
-  gap: '15px',
-  boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
-  zIndex: 1000,
-  maxWidth: '90%',
-  width: '800px'
-};
-
-const landmarkImageStyle = {
-  width: '100px',
-  height: '100px',
-  borderRadius: '50%',
-  objectFit: 'cover',
-  border: '2px solid #FF69B4'
-};
-
-const landmarkTextStyle = {
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: '10px'
-};
-
-// Add to styles at the top
-const buttonStyle = {
-  border: 'none',
-  padding: '6px 12px',
-  borderRadius: '15px',
-  cursor: 'pointer',
-  fontSize: '12px',
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px'
-};
-
-const removeButtonStyle = {
-  ...buttonStyle,
-  backgroundColor: '#FFE4E9',
-  color: '#FF69B4',
-  marginTop: '10px'
-};
-
-// Add this near other style constants
-const ratingStyle = {
-  display: 'flex',
-  alignItems: 'center',
-  gap: '4px',
-  fontSize: '14px',
-  color: '#666'
-};
-
-// Add new style for description
-const descriptionStyle = {
-  margin: '8px 0 0 0',
-  color: '#666',
-  fontSize: '13px',
-  lineHeight: '1.3',
-  width: '100%'
 };
 
 function Map() {
@@ -172,7 +111,7 @@ function Map() {
       city: {name: location, latitude: lat, longitude: lng},
       is_first_request: false
     };
-
+    
     try {
       const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${prompt}`, {
         method: 'POST',
@@ -218,10 +157,6 @@ function Map() {
         const audio = new Audio(audioUrl);
         audio.play();
       }
-
-      // Update the UI with the description
-      // TODO: Add description to the landmark info display
-
     } catch (error) {
       console.error('Error fetching landmark description:', error);
     }
@@ -239,8 +174,7 @@ function Map() {
   console.log({selectedMarker})
   console.log({selectedLandmarks})
   return (
-    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {/* Add landmark info display */}
+    <div style={mapContainerStyle}>
       {selectedMarker && (
         <div style={landmarkInfoStyle}>
           <img 
@@ -250,14 +184,7 @@ function Map() {
           />
           <div style={landmarkTextStyle}>
             <div style={{ flex: 1 }}>
-              <h4 style={{ 
-                margin: '0 0 4px 0',
-                color: '#333',
-                fontSize: '18px',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis'
-              }}>
+              <h4 style={landmarkTitleStyle}>
                 {selectedMarker.name}
               </h4>
               <div style={ratingStyle}>
