@@ -105,7 +105,7 @@ function Map() {
   const handleMarkerClick = async (landmark) => {
     setSelectedMarker(landmark);
 
-    const prompt = `Tell me about ${landmark.name} in four or 5 sentences.`;
+    const prompt = `In three sentences, tell me about ${landmark.name} by sourcing wikipedia.`;
 
     const payload = {
       city: {name: location, latitude: lat, longitude: lng},
