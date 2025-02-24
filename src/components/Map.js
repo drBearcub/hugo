@@ -1,5 +1,5 @@
-import { GoogleMap, LoadScript, DirectionsRenderer, Marker, InfoWindow, Circle } from '@react-google-maps/api';
-import React, { useState, useCallback, useEffect, use } from 'react';
+import { GoogleMap, LoadScript, DirectionsRenderer, Marker } from '@react-google-maps/api';
+import React, { useState, useCallback, useEffect } from 'react';
 import RecordButton from './RecordButton';
 import useLocation from '../hooks/useLocation';
 import { mapStyles } from '../styles/mapStyles';
@@ -18,13 +18,13 @@ const landmarkInfoStyle = {
   transform: 'translateX(-50%)',
   backgroundColor: 'white',
   borderRadius: '15px',
-  padding: '15px',
+  padding: '2px',
   display: 'flex',
   gap: '15px',
   boxShadow: '0 2px 10px rgba(0,0,0,0.1)',
   zIndex: 1000,
   maxWidth: '90%',
-  width: '600px'
+  width: '800px'
 };
 
 const landmarkImageStyle = {
@@ -74,10 +74,11 @@ const ratingStyle = {
 
 // Add new style for description
 const descriptionStyle = {
-  margin: '12px 0 0 0',
+  margin: '8px 0 0 0',
   color: '#666',
-  fontSize: '14px',
-  lineHeight: '1.4'
+  fontSize: '13px',
+  lineHeight: '1.3',
+  width: '100%'
 };
 
 function Map() {
@@ -250,9 +251,9 @@ function Map() {
           <div style={landmarkTextStyle}>
             <div style={{ flex: 1 }}>
               <h4 style={{ 
-                margin: '0 0 4px 0',  // Added bottom margin for rating
+                margin: '0 0 4px 0',
                 color: '#333',
-                fontSize: '20px',
+                fontSize: '18px',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis'
@@ -306,12 +307,9 @@ function Map() {
           onLoad={handleGoogleMapLoad}
           options={{
             styles: mapStyles,
-            disableDefaultUI: false,
+            disableDefaultUI: true,
             clickableIcons: false,
-            zoomControl: true,
-            zoomControlOptions: {
-              position: 7
-            },
+            zoomControl: false,
             gestureHandling: 'cooperative',
             mapTypeControl: false,
             scaleControl: true,

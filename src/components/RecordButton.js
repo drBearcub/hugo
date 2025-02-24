@@ -245,8 +245,9 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
             }}
           />
           <span style={{
-            fontSize: '16px',
-            color: '#333'
+            fontSize: '13px',
+            color: '#333',
+            lineHeight: '1.3'
           }}>
             Ask me anything about {location}
           </span>
