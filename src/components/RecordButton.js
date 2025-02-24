@@ -341,8 +341,8 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
       )}
 
       <button 
-        //onMouseDown={handleRecordStart}
-        //onMouseUp={handleRecordStop}
+        onMouseDown={handleRecordStart}
+        onMouseUp={handleRecordStop}
         onTouchStart={(e) => {
           e.preventDefault(); // Prevent default touch behavior
           handleRecordStart();
