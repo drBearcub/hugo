@@ -23,7 +23,6 @@ const center = {
 function Map() {
   const [isFirstRequest, setIsFirstRequest] = useState(true);
   const { location, handleMapLoad: handleLocationMapLoad, lat, lng } = useLocation();
-  const [conversations, setConversations] = useState([]);
   const [directions, setDirections] = useState(null);
   const [selectedLandmarks, setSelectedLandmarks] = useState([]);
   const [isExploreMode, setIsExploreMode] = useState(false);
@@ -35,32 +34,8 @@ function Map() {
     requestDirections(selectedLandmarks);
   }, [selectedLandmarks])
 
-  const handleTranscriptionComplete = (text) => {
-    console.log('Previous conversations:', conversations); // Debug log
-    setConversations(prev => {
-      console.log('Adding new conversation to:', prev); // Debug log
-      return [...prev, { text, apiResponse: null }];
-    });
-  };
-
   const handleRequestComplete = (response) => {
     setIsFirstRequest(false);
-    console.log('Updating conversation with response:', response); // Debug log
-    setConversations(prev => {
-      console.log('Current conversations before update:', prev); // Debug log
-      if (prev.length === 0) {
-        console.warn('No conversations to update');
-        return prev;
-      }
-      const updated = [...prev];
-      updated[updated.length - 1] = {
-        ...updated[updated.length - 1],
-        apiResponse: response
-      };
-      return updated;
-    });
-
-    console.log("before setting state, ", {response})
 
     if (response.parsedLandmarks && response.parsedLandmarks.length > 0 && !isExploreMode) {
       console.log("should set state, ", {response})
@@ -280,7 +255,6 @@ function Map() {
       </LoadScript>
       
       <RecordButton 
-        onTranscriptionComplete={handleTranscriptionComplete}
         onRequestComplete={handleRequestComplete}
         location={location}
         isFirstRequest={isFirstRequest}

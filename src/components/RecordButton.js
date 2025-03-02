@@ -15,14 +15,12 @@ import {
 import { API_KEYS } from '../config/api-keys';
 import guideAvatar from '../pangpang.png';
 
-const OPENAI_API_KEY = process.env.REACT_APP_OPENAI_API_KEY;
-
 const openai = new OpenAI({
-  apiKey: OPENAI_API_KEY,
+  apiKey: process.env.REACT_APP_OPENAI_API_KEY,
   dangerouslyAllowBrowser: true
 });
 
-function RecordButton({ onTranscriptionComplete, onRequestComplete, location, lat, lng, selectedLandmarks, isFirstRequest, isExploreMode }) {
+function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks, isFirstRequest, isExploreMode }) {
   const [isRecording, setIsRecording] = React.useState(false);
   const [isTranscribing, setIsTranscribing] = React.useState(false);
   const [isSending, setIsSending] = React.useState(false);
@@ -193,13 +191,10 @@ function RecordButton({ onTranscriptionComplete, onRequestComplete, location, la
     // Step 1: Transcribe Audio
     try {
       const text = await transcribeAudio(recorderMediaBlobUrl);
-      console.log('Transcription completed:', text);
       setTranscribedText(text); // Store transcribed text
-      onTranscriptionComplete(text);
 
       // Step 2: Send to Backend
-      const response = await sendToBackend(text);
-      console.log('Backend response received:', response);
+      await sendToBackend(text);
     } catch (error) {
       console.error('Error:', error);
       setStatus('Error: ' + error);
