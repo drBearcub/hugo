@@ -14,7 +14,8 @@ import {
   landmarkTitleStyle,
   mapContainerStyle
 } from '../styles/mapStyles';
-
+import { textToSpeech } from '../utils/elevenlabs';
+import { fetchGuideResponse } from '../utils/api';
 const center = {
   lat: 37.7749,
   lng: -122.4194
@@ -80,58 +81,13 @@ function Map() {
   const handleMarkerClick = async (landmark) => {
     setSelectedMarker(landmark);
 
-    const prompt = `In three sentences, tell me about ${landmark.name} by sourcing wikipedia.`;
-
-    const payload = {
-      city: {name: location, latitude: lat, longitude: lng},
-      is_first_request: false
-    };
-    
     try {
-      const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${prompt}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        throw new Error(`API call failed: ${response.statusText}`);
-      }
-
-      const apiResponse = await response.json();
+      const prompt = `In three sentences, tell me about ${landmark.name} by sourcing wikipedia.`;
+      const apiResponse = await fetchGuideResponse(prompt, location, lat, lng, isFirstRequest);
 
       console.log(apiResponse);
       setTellMeAboutLandmark(apiResponse.speech);
-      // Call ElevenLabs API for text-to-speech
-      const voiceId = process.env.REACT_APP_ELEVENLABS_VOICE_ID;
-
-      const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': process.env.REACT_APP_ELEVENLABS_API_KEY
-        },
-        body: JSON.stringify({
-          //[david] set with this guy
-          text: apiResponse.speech,
-          model_id: 'eleven_monolingual_v1',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            speed:1.00
-          }
-        })
-      });
-
-      if (response_audio.ok) {
-        const audioBlob = await response_audio.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.play();
-      }
+      textToSpeech(apiResponse.speech);
     } catch (error) {
       console.error('Error fetching landmark description:', error);
     }

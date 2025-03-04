@@ -14,6 +14,8 @@ import {
 } from '../styles/recordButton';
 import { API_KEYS } from '../config/api-keys';
 import guideAvatar from '../pangpang.png';
+import { textToSpeech } from '../utils/elevenlabs';
+import { fetchGuideResponse } from '../utils/api';
 
 const openai = new OpenAI({
   apiKey: process.env.REACT_APP_OPENAI_API_KEY,
@@ -101,25 +103,7 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
     setStatus('Sending to backend...');
     
     try {
-      const payload = {
-        city: {name: location, latitude: lat, longitude: lng},
-        is_first_request: isFirstRequest
-      };
-
-      const response = await fetch(`https://voice-view-backend-ef6f06a14ec9.herokuapp.com/answer?query=${transcribedText}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        console.log(response);
-        throw new Error(`API call failed: ${response.statusText}`);
-      }
-
-      const apiResponse = await response.json();
+      const apiResponse = await fetchGuideResponse(transcribedText, location, lat, lng, isFirstRequest);
 
       console.log(apiResponse);
       
@@ -150,32 +134,7 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
       const voiceId = process.env.REACT_APP_ELEVENLABS_VOICE_ID;
 
       setResponse(apiResponse.speech);
-
-      const response_audio = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': process.env.REACT_APP_ELEVENLABS_API_KEY
-        },
-        body: JSON.stringify({
-          text: apiResponse.speech,
-          model_id: 'eleven_monolingual_v1',
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            speed:1.00
-          }
-        })
-      });
-
-      if (response_audio.ok) {
-        const audioBlob = await response_audio.blob();
-        const audioUrl = URL.createObjectURL(audioBlob);
-        const audio = new Audio(audioUrl);
-        audio.play();
-      }
-
+      textToSpeech(apiResponse.speech);
       onRequestComplete(data);
       return data;
     } catch (error) {
