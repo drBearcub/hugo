@@ -77,7 +77,7 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
     }
   };
 
-  const testImageSearch = async (query) => {
+  const searchImageUrlForLandmark = async (query) => {
     try {
       const response = await fetch(
         `https://www.googleapis.com/customsearch/v1?key=${API_KEYS.GOOGLE_SEARCH}&cx=${API_KEYS.GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
@@ -98,19 +98,18 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
   };
 
   
-  const sendToBackend = async (transcribedText) => {
+  const planTourWithGuide = async (transcribedText) => {
     setIsSending(true);
     setStatus('Sending to backend...');
     
     try {
       const apiResponse = await fetchGuideResponse(transcribedText, location, lat, lng, isFirstRequest);
-
-      console.log(apiResponse);
       
-      // First, fetch all images in parallel
+      // When guide has determined it has collected enough information, it would return a list of landmarks
+      // to visit. We then fetch the image urls for each landmark and return a list of landmarks with images.
       const landmarksWithImages = await Promise.all(
         apiResponse.locations.map(async (landmark) => {
-          const photoUrl = await testImageSearch(landmark.displayName);
+          const photoUrl = await searchImageUrlForLandmark(landmark.displayName);
           return {
             name: landmark.displayName,
             location: { lat: landmark.latitude, lng: landmark.longitude },
@@ -129,10 +128,6 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
         parsedLandmarks: landmarksWithImages
       };
 
-
-      // Call ElevenLabs API for text-to-speech
-      const voiceId = process.env.REACT_APP_ELEVENLABS_VOICE_ID;
-
       setResponse(apiResponse.speech);
       textToSpeech(apiResponse.speech);
       onRequestComplete(data);
@@ -146,14 +141,14 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
     }
   };
 
-  const handleProcessing = async () => {
+  const handleNewRecording = async () => {
     // Step 1: Transcribe Audio
     try {
       const text = await transcribeAudio(recorderMediaBlobUrl);
       setTranscribedText(text); // Store transcribed text
 
       // Step 2: Send to Backend
-      await sendToBackend(text);
+      await planTourWithGuide(text);
     } catch (error) {
       console.error('Error:', error);
       setStatus('Error: ' + error);
@@ -174,7 +169,7 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
 
   React.useEffect(() => {
     if (recorderMediaBlobUrl && !isRecording) {
-      handleProcessing();
+      handleNewRecording();
     }
   }, [recorderMediaBlobUrl]);
 
@@ -182,91 +177,34 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
   const thinking = isTranscribing || isSending
   const canDisplayResponse = response && !isSending && !isTranscribing && !isRecording && shouldUseOverlay
   const shouldDisplayAskMeAnything = !isExploreMode && !shouldUseOverlay
-  console.log("response", response);
-  console.log("isRecording", isRecording);
+
+  const guideDialogBubble = (text) => (
+    <div style={thinkingBubbleStyle}>
+    <img 
+      src={guideAvatar}
+      alt="Guide avatar"
+      style={{
+        width: '60px',
+        height: '60px',
+        objectFit: 'contain'
+      }}
+    />
+    <span style={{
+      fontSize: '13px',
+      color: '#333',
+      lineHeight: '1.3'
+    }}>
+      {text}
+    </span>
+  </div>
+  )
+  
   return (
     <>
-      {
-        shouldDisplayAskMeAnything&& (
-        <div style={thinkingBubbleStyle}>
-          <img 
-            src={guideAvatar}
-            alt="Guide avatar"
-            style={{
-              width: '60px',
-              height: '60px',
-              objectFit: 'contain'
-            }}
-          />
-          <span style={{
-            fontSize: '13px',
-            color: '#333',
-            lineHeight: '1.3'
-          }}>
-            Ask me anything about {location}
-          </span>
-        </div>
-       ) 
-      }
-      {thinking && (
-        <div style={thinkingBubbleStyle}>
-          <img 
-            src={guideAvatar}
-            alt="Guide avatar"
-            style={{
-              width: '60px',
-              height: '60px',
-              objectFit: 'contain'
-            }}
-          />
-          <span style={{
-            fontSize: '16px',
-            color: '#333'
-          }}>
-            Guide is thinking...
-          </span>
-        </div>
-      )}
-
-      {isRecording && (
-        <div style={thinkingBubbleStyle}>
-          <img 
-            src={guideAvatar}
-            alt="Guide avatar"
-            style={{
-              width: '60px',
-              height: '60px',
-              objectFit: 'contain'
-            }}
-          />
-          <span style={{
-            fontSize: '16px',
-            color: '#333'
-          }}>
-            Guide is listening...
-          </span>
-        </div>
-      )}
-
-      {canDisplayResponse && (
-        <div style={thinkingBubbleStyle}>
-          <img 
-            src={guideAvatar}
-            alt="Guide avatar"
-            style={{
-              width: '60px',
-              height: '60px',
-              objectFit: 'contain'
-            }}
-          />
-          <span style={{
-            fontSize: '16px',
-            color: '#333'
-          }}>
-            {response}
-          </span>
-        </div>
-      )}
+      {shouldDisplayAskMeAnything && guideDialogBubble(`Ask me anything about ${location}`)}
+      {thinking && guideDialogBubble("Guide is thinking...")}
+      {isRecording && guideDialogBubble("Guide is listening...")}
+      {canDisplayResponse && guideDialogBubble(response)}
 
       {shouldUseOverlay && (
         <div style={overlayStyle}>
