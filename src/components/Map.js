@@ -152,7 +152,7 @@ function Map() {
       )}
 
       <LoadScript 
-        googleMapsApiKey={API_KEYS.GOOGLE_MAPS}
+        googleMapsApiKey={API_KEYS.GOOGLE}
         libraries={['places']}
       >
         <GoogleMap

@@ -80,7 +80,7 @@ function RecordButton({ onRequestComplete, location, lat, lng, selectedLandmarks
   const searchImageUrlForLandmark = async (query) => {
     try {
       const response = await fetch(
-        `https://www.googleapis.com/customsearch/v1?key=${API_KEYS.GOOGLE_SEARCH}&cx=${API_KEYS.GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
+        `https://www.googleapis.com/customsearch/v1?key=${API_KEYS.GOOGLE}&cx=${API_KEYS.GOOGLE_SEARCH_ENGINE_ID}&q=${query}&searchType=image&num=1`
       );
       
       if (!response.ok) {
